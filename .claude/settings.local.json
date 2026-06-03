@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(/opt/homebrew/bin/npm install *)",
+      "Bash(/usr/local/bin/npm install *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "ookura",
+    "name": "OKURA",
+    "url": "https://ec.wb-ookura.com",
+    "type": "shopify",
+    "search_url_template": "https://ec.wb-ookura.com/search?q={query}&type=product",
+    "enabled": true
+  },
+  {
+    "id": "allu",
+    "name": "ALLU",
+    "url": "https://allu-official.com/jp/ja",
+    "type": "playwright",
+    "search_url_template": "https://allu-official.com/jp/ja/search?q={query}",
+    "enabled": true
+  }
+]

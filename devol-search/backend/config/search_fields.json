@@ -1,0 +1,11 @@
+[
+  { "id": "brand",     "label": "Brand",       "label_es": "Marca",           "type": "text",   "enabled": true },
+  { "id": "model",     "label": "Model",        "label_es": "Modelo",          "type": "text",   "enabled": true },
+  { "id": "size",      "label": "Size",         "label_es": "Tamaño",          "type": "text",   "enabled": true },
+  { "id": "color",     "label": "Color",        "label_es": "Color",           "type": "text",   "enabled": true },
+  { "id": "condition", "label": "Condition",    "label_es": "Condición",       "type": "select", "options": ["Any", "New", "Like New", "Excellent", "Very Good", "Good", "Fair"], "enabled": true },
+  { "id": "price_min", "label": "Min Price",    "label_es": "Precio mínimo",   "type": "range",  "enabled": true },
+  { "id": "price_max", "label": "Max Price",    "label_es": "Precio máximo",   "type": "range",  "enabled": true },
+  { "id": "material",  "label": "Material",     "label_es": "Material",        "type": "text",   "enabled": true },
+  { "id": "hardware",  "label": "Hardware",     "label_es": "Herrajes",        "type": "select", "options": ["Any", "Gold", "Silver", "Palladium", "Brushed Gold", "Rose Gold"], "enabled": true }
+]
