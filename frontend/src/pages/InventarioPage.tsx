@@ -48,6 +48,8 @@ export default function InventarioPage() {
   // Add form state
   const [form, setForm] = useState({ brand: '', model: '', price: '', currency: 'JPY' as Currency, store_id: '', inventory_status: 'Visto' as InventoryStatus, nota: '' })
   const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [formLocation, setFormLocation] = useState<{lat: number, lng: number} | null>(null)
+  const [locationStatus, setLocationStatus] = useState<'none'|'exif'|'gps'|'denied'>('none')
   const [addLoading, setAddLoading] = useState(false)
   const [addError, setAddError] = useState('')
 
@@ -133,11 +135,14 @@ export default function InventarioPage() {
       const fd = new FormData()
       Object.entries(form).forEach(([k, v]) => { if (v) fd.append(k, v) })
       if (photoFile) fd.append('photo', photoFile)
+      if (formLocation) { fd.append('lat', String(formLocation.lat)); fd.append('lng', String(formLocation.lng)); }
       const { data } = await api.post('/inventory', fd)
       setItems(prev => [data, ...prev])
       setAddOpen(false)
       setForm({ brand: '', model: '', price: '', currency: 'JPY', store_id: '', inventory_status: 'Visto', nota: '' })
       setPhotoFile(null)
+      setFormLocation(null)
+      setLocationStatus('none')
     } catch (err: any) {
       setAddError(err.response?.data?.error || 'Error al agregar')
     } finally {
@@ -381,7 +386,34 @@ export default function InventarioPage() {
           <button onClick={handleAdd} disabled={addLoading} className="btn-primary">{addLoading ? 'Guardando...' : 'Guardar'}</button>
         </>}>
         <div className="flex gap-4 mb-4">
-          <ImageUpload value={undefined} onChange={f => setPhotoFile(f)} />
+          <ImageUpload value={undefined} onChange={async (f) => {
+            setPhotoFile(f)
+            setFormLocation(null)
+            setLocationStatus('none')
+            if (!f) return
+            // 1. Try EXIF GPS from the photo
+            try {
+              const exifr = await import('exifr')
+              const gps = await exifr.default.gps(f)
+              if (gps?.latitude && gps?.longitude) {
+                setFormLocation({ lat: gps.latitude, lng: gps.longitude })
+                setLocationStatus('exif')
+                return
+              }
+            } catch {}
+            // 2. Fallback: request current device location
+            if ('geolocation' in navigator) {
+              setLocationStatus('gps')
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  setFormLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+                  setLocationStatus('gps')
+                },
+                () => setLocationStatus('denied'),
+                { timeout: 8000, enableHighAccuracy: true }
+              )
+            }
+          }} />
           <div className="flex-1 space-y-3">
             <FormField label="Marca" required>
               <input className="input" placeholder="Ej: Sony" value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} />
@@ -391,6 +423,19 @@ export default function InventarioPage() {
             </FormField>
           </div>
         </div>
+        {locationStatus !== 'none' && (
+          <div className={`flex items-center gap-2 text-xs rounded-lg px-3 py-1.5 w-fit ${
+            locationStatus === 'denied' ? 'bg-gray-50 text-gray-400' :
+            locationStatus === 'gps' && !formLocation ? 'bg-yellow-50 text-yellow-600' :
+            'bg-green-50 text-green-700'
+          }`}>
+            <MapPin size={11} />
+            {locationStatus === 'exif' && 'Ubicación extraída de la foto'}
+            {locationStatus === 'gps' && formLocation && 'Ubicación actual capturada'}
+            {locationStatus === 'gps' && !formLocation && 'Obteniendo ubicación...'}
+            {locationStatus === 'denied' && 'Sin acceso a ubicación'}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <FormField label="Precio" required>
             <input type="number" className="input" placeholder="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />

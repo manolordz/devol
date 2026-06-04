@@ -57,9 +57,17 @@ router.post('/', authenticate, requireProject, upload.single('photo'), async (re
     if (!brand || !model || !price) return res.status(400).json({ error: 'Marca, modelo y precio son requeridos' });
     const rates = await getRates();
     let photo = null, lat = null, lng = null;
+    // Use frontend-provided coordinates if available (from EXIF or device GPS)
+    if (req.body.lat && req.body.lng) {
+      lat = parseFloat(req.body.lat);
+      lng = parseFloat(req.body.lng);
+    }
     if (req.file) {
-      const gps = await extractGPS(req.file.buffer);
-      lat = gps.lat; lng = gps.lng;
+      // Only run EXIF extraction if frontend didn't already provide coordinates
+      if (!lat) {
+        const gps = await extractGPS(req.file.buffer);
+        lat = gps.lat; lng = gps.lng;
+      }
       photo = await uploadFile(req.file.buffer, req.file.originalname, 'inventory');
     }
     const baseInsert = {
