@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Plus, Save, ChevronUp, ChevronDown, Search, X, Filter, MapPin } from 'lucide-react'
+import { Plus, Save, ChevronUp, ChevronDown, Search, X, Filter, MapPin, Pencil } from 'lucide-react'
 import Modal, { FormField } from '../components/Modal'
 import PinModal from '../components/PinModal'
 import ImageUpload, { SmallImageUpload } from '../components/ImageUpload'
@@ -50,6 +50,9 @@ export default function InventarioPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [formLocation, setFormLocation] = useState<{lat: number, lng: number} | null>(null)
   const [locationStatus, setLocationStatus] = useState<'none'|'exif'|'gps'|'denied'>('none')
+  const [manualLocItem, setManualLocItem] = useState<number | null>(null)
+  const [manualLocInput, setManualLocInput] = useState('')
+  const [manualLocError, setManualLocError] = useState('')
   const [addLoading, setAddLoading] = useState(false)
   const [addError, setAddError] = useState('')
 
@@ -157,6 +160,54 @@ export default function InventarioPage() {
 
   const getValue = (item: InventoryItem, field: string): any =>
     (pendingChanges[item.id] as any)?.[field] ?? (item as any)[field]
+
+  // Parse a location string: "lat, lng" or Google Maps URL
+  const parseManualLocation = (input: string): {lat: number, lng: number} | null => {
+    // Try "lat, lng" format
+    const coords = input.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/)
+    if (coords) {
+      const lat = parseFloat(coords[1]), lng = parseFloat(coords[2])
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng }
+    }
+    // Try Google Maps URL (@lat,lng or q=lat,lng)
+    const urlMatch = input.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+                     input.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+                     input.match(/maps\.app\.goo\.gl/) // short URL - can't parse
+    if (urlMatch && urlMatch[1]) return { lat: parseFloat(urlMatch[1]), lng: parseFloat(urlMatch[2]) }
+    return null
+  }
+
+  const handleSetLocation = (itemId: number) => {
+    setManualLocItem(itemId)
+    setManualLocInput('')
+    setManualLocError('')
+    // Try geolocation first
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          handleCellChange(itemId, 'lat', pos.coords.latitude)
+          handleCellChange(itemId, 'lng', pos.coords.longitude)
+          setManualLocItem(null)
+        },
+        () => {
+          // Permission denied or unavailable - show manual input (already open)
+          setManualLocError('Acceso a ubicación denegado. Ingresa las coordenadas manualmente.')
+        },
+        { timeout: 6000, enableHighAccuracy: true }
+      )
+    }
+  }
+
+  const handleSaveManualLoc = (itemId: number) => {
+    const loc = parseManualLocation(manualLocInput)
+    if (!loc) {
+      setManualLocError('Formato inválido. Ingresa "latitud, longitud" o pega un enlace de Google Maps.')
+      return
+    }
+    handleCellChange(itemId, 'lat', loc.lat)
+    handleCellChange(itemId, 'lng', loc.lng)
+    setManualLocItem(null)
+  }
 
   const costoMXN = (item: InventoryItem) => {
     const price = (pendingChanges[item.id] as any)?.price ?? item.price
@@ -357,18 +408,43 @@ export default function InventarioPage() {
                     </td>
                     {/* Ubicación */}
                     <td className="td text-center">
-                      {item.lat && item.lng ? (
-                        <a
-                          href={`https://maps.google.com/?q=${item.lat},${item.lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-medium text-navy hover:text-gold transition-colors whitespace-nowrap"
-                        >
-                          <MapPin size={12} />
-                          Ver
-                        </a>
+                      {(getValue(item, 'lat') || item.lat) && (getValue(item, 'lng') || item.lng) ? (
+                        <div className="flex items-center gap-1 justify-center">
+                          <a
+                            href={`https://maps.google.com/?q=${getValue(item,'lat')||item.lat},${getValue(item,'lng')||item.lng}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-navy hover:text-gold transition-colors whitespace-nowrap"
+                          >
+                            <MapPin size={12} /> Ver
+                          </a>
+                          <button onClick={() => handleSetLocation(item.id)} className="p-0.5 text-gray-300 hover:text-navy transition-colors" title="Cambiar ubicación">
+                            <Pencil size={10} />
+                          </button>
+                        </div>
                       ) : (
-                        <span className="text-gray-300 text-xs">—</span>
+                        <button onClick={() => handleSetLocation(item.id)}
+                          className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-navy transition-colors whitespace-nowrap"
+                        >
+                          <MapPin size={11} /> Agregar
+                        </button>
+                      )}
+                      {/* Manual location input inline */}
+                      {manualLocItem === item.id && (
+                        <div className="mt-1 text-left">
+                          <input
+                            className="w-36 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-gold"
+                            placeholder="lat, lng o link Maps"
+                            value={manualLocInput}
+                            autoFocus
+                            onChange={e => { setManualLocInput(e.target.value); setManualLocError('') }}
+                            onKeyDown={e => { if (e.key === 'Enter') handleSaveManualLoc(item.id); if (e.key === 'Escape') setManualLocItem(null) }}
+                          />
+                          <div className="flex gap-1 mt-1">
+                            <button onClick={() => handleSaveManualLoc(item.id)} className="text-[10px] bg-navy text-white px-2 py-0.5 rounded">OK</button>
+                            <button onClick={() => setManualLocItem(null)} className="text-[10px] text-gray-400 px-1">✕</button>
+                          </div>
+                          {manualLocError && <p className="text-[10px] text-red-500 mt-0.5 max-w-36">{manualLocError}</p>}
+                        </div>
                       )}
                     </td>
                   </tr>
