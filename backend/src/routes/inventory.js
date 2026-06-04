@@ -62,13 +62,29 @@ router.post('/', authenticate, requireProject, upload.single('photo'), async (re
       lat = gps.lat; lng = gps.lng;
       photo = await uploadFile(req.file.buffer, req.file.originalname, 'inventory');
     }
-    const { data: item } = await getDb().from('inventory').insert({
+    const baseInsert = {
       project_id: req.user.projectId, brand, model,
       price: parseFloat(price), currency: currency || 'JPY',
       store_id: store_id ? parseInt(store_id) : null,
-      inventory_status: inventory_status || 'Visto',
-      nota: nota || null, photo, lat, lng,
-    }).select().single();
+      inventory_status: inventory_status || 'Visto', photo,
+    };
+    // Add optional columns — gracefully skip if columns don't exist yet in DB
+    if (nota) baseInsert.nota = nota;
+    if (lat != null) { baseInsert.lat = lat; baseInsert.lng = lng; }
+
+    let { data: item, error: insertErr } = await getDb().from('inventory').insert(baseInsert).select().single();
+    if (insertErr) {
+      // Retry without new columns if they don't exist in the schema yet
+      if (insertErr.message?.includes('column') || insertErr.code === '42703') {
+        const safeInsert = { project_id: req.user.projectId, brand, model,
+          price: parseFloat(price), currency: currency || 'JPY',
+          store_id: store_id ? parseInt(store_id) : null,
+          inventory_status: inventory_status || 'Visto', photo };
+        const retry = await getDb().from('inventory').insert(safeInsert).select().single();
+        if (retry.error) throw new Error(retry.error.message);
+        item = retry.data;
+      } else { throw new Error(insertErr.message); }
+    }
     await logActivity({ projectId: req.user.projectId, userId: req.user.userId, userName: req.user.userName,
       actionType: 'create', tableName: 'inventory', recordId: item.id, fieldName: 'brand', newValue: brand });
     res.status(201).json(await enrichItem(item, rates));
