@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Plus, Save, ChevronUp, ChevronDown, Search, X, Filter } from 'lucide-react'
+import { Plus, Save, ChevronUp, ChevronDown, Search, X, Filter, MapPin } from 'lucide-react'
 import Modal, { FormField } from '../components/Modal'
 import PinModal from '../components/PinModal'
 import ImageUpload, { SmallImageUpload } from '../components/ImageUpload'
@@ -46,7 +46,7 @@ export default function InventarioPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   // Add form state
-  const [form, setForm] = useState({ brand: '', model: '', price: '', currency: 'JPY' as Currency, store_id: '', inventory_status: 'Visto' as InventoryStatus })
+  const [form, setForm] = useState({ brand: '', model: '', price: '', currency: 'JPY' as Currency, store_id: '', inventory_status: 'Visto' as InventoryStatus, nota: '' })
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [addLoading, setAddLoading] = useState(false)
   const [addError, setAddError] = useState('')
@@ -136,7 +136,7 @@ export default function InventarioPage() {
       const { data } = await api.post('/inventory', fd)
       setItems(prev => [data, ...prev])
       setAddOpen(false)
-      setForm({ brand: '', model: '', price: '', currency: 'JPY', store_id: '', inventory_status: 'Visto' })
+      setForm({ brand: '', model: '', price: '', currency: 'JPY', store_id: '', inventory_status: 'Visto', nota: '' })
       setPhotoFile(null)
     } catch (err: any) {
       setAddError(err.response?.data?.error || 'Error al agregar')
@@ -226,6 +226,7 @@ export default function InventarioPage() {
                   { key: 'delivered', label: 'Entregado', sortable: false },
                   { key: 'paqueteria', label: 'Paquetería', sortable: false },
                   { key: 'store_name', label: 'Tienda', sortable: true },
+                  { key: 'ubicacion', label: 'Ubicación', sortable: false },
                 ].map(col => (
                   <th key={col.key}
                     className={`th group ${col.sortable ? 'cursor-pointer hover:bg-gray-100' : ''}`}
@@ -237,9 +238,9 @@ export default function InventarioPage() {
               {/* Filter row */}
               {showFilters && (
                 <tr className="bg-white border-b border-gray-100">
-                  {['photo','brand','model','price','currency','costo_mxn','costo_sugerido','precio_publicado','inventory_status','status','client_name','delivered','paqueteria','store_name'].map(key => (
+                  {['photo','brand','model','price','currency','costo_mxn','costo_sugerido','precio_publicado','inventory_status','status','client_name','delivered','paqueteria','store_name','ubicacion'].map(key => (
                     <td key={key} className="px-2 py-1">
-                      {!['photo','costo_mxn','costo_sugerido','delivered','paqueteria'].includes(key) && (
+                      {!['photo','costo_mxn','costo_sugerido','delivered','paqueteria','ubicacion'].includes(key) && (
                         <input
                           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gold"
                           placeholder="Filtrar..."
@@ -254,7 +255,7 @@ export default function InventarioPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filteredItems.length === 0 ? (
-                <tr><td colSpan={14} className="text-center py-12 text-gray-400">No hay artículos</td></tr>
+                <tr><td colSpan={15} className="text-center py-12 text-gray-400">No hay artículos</td></tr>
               ) : filteredItems.map(item => {
                 const isDirty = !!pendingChanges[item.id] || !!photoFiles[item.id]
                 return (
@@ -349,6 +350,22 @@ export default function InventarioPage() {
                         {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                       </select>
                     </td>
+                    {/* Ubicación */}
+                    <td className="td text-center">
+                      {item.lat && item.lng ? (
+                        <a
+                          href={`https://maps.google.com/?q=${item.lat},${item.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-navy hover:text-gold transition-colors whitespace-nowrap"
+                        >
+                          <MapPin size={12} />
+                          Ver
+                        </a>
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
                   </tr>
                 )
               })}
@@ -395,6 +412,9 @@ export default function InventarioPage() {
             </select>
           </FormField>
         </div>
+        <FormField label="Nota (opcional)">
+          <input className="input" placeholder="Ej: Caja rota, con factura..." value={form.nota} onChange={e => setForm(f => ({ ...f, nota: e.target.value }))} />
+        </FormField>
         {form.price && (
           <div className="mt-3 p-3 bg-gray-50 rounded-lg">
             <div className="flex justify-between text-xs text-gray-500 mb-1">

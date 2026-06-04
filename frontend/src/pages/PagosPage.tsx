@@ -23,7 +23,7 @@ export default function PagosPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [showFilters, setShowFilters] = useState(false)
-  const [form, setForm] = useState({ amount: '', currency: 'MXN' as Currency, paid_by: '', paid_to: '', account: '', note: '' })
+  const [form, setForm] = useState({ amount: '', currency: 'MXN' as Currency, paid_by: '', paid_to: '', account: '', note: '', received: true })
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState('')
 
@@ -80,7 +80,7 @@ export default function PagosPage() {
         setPayments(prev => [data, ...prev])
       }
       setAddOpen(false); setEditItem(null)
-      setForm({ amount: '', currency: 'MXN', paid_by: '', paid_to: '', account: '', note: '' })
+      setForm({ amount: '', currency: 'MXN', paid_by: '', paid_to: '', account: '', note: '', received: true })
       loadAll()
     } catch (err: any) {
       setFormError(err.response?.data?.error || 'Error')
@@ -98,7 +98,7 @@ export default function PagosPage() {
   const openEdit = (item: Payment) => {
     requirePin(async () => {
       setEditItem(item)
-      setForm({ amount: String(item.amount), currency: item.currency, paid_by: String(item.paid_by || ''), paid_to: String(item.paid_to || ''), account: item.account || '', note: item.note || '' })
+      setForm({ amount: String(item.amount), currency: item.currency, paid_by: String(item.paid_by || ''), paid_to: String(item.paid_to || ''), account: item.account || '', note: item.note || '', received: item.received })
       setAddOpen(true)
     })
   }
@@ -136,7 +136,7 @@ export default function PagosPage() {
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showFilters ? 'bg-gold text-navy' : 'bg-gray-100 text-gray-600'}`}>
               <Filter size={15} />
             </button>
-            <button onClick={() => { setEditItem(null); setForm({ amount: '', currency: 'MXN', paid_by: '', paid_to: '', account: '', note: '' }); setAddOpen(true) }}
+            <button onClick={() => { setEditItem(null); setForm({ amount: '', currency: 'MXN', paid_by: '', paid_to: '', account: '', note: '', received: true }); setAddOpen(true) }}
               className="flex items-center gap-1.5 bg-gold text-navy px-3 py-2 rounded-lg text-sm font-bold hover:bg-gold-dark">
               <Plus size={16} /><span className="hidden sm:inline">Agregar</span>
             </button>
@@ -310,6 +310,10 @@ export default function PagosPage() {
         <FormField label="Nota (opcional)">
           <input className="input" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Ej: Pago parcial..." />
         </FormField>
+        <label className="flex items-center gap-3 mt-2 cursor-pointer">
+          <input type="checkbox" className="w-4 h-4 accent-navy rounded" checked={!!form.received} onChange={e => setForm(f => ({ ...f, received: e.target.checked }))} />
+          <span className="text-sm font-medium text-gray-700">Recibido</span>
+        </label>
         {formError && <p className="mt-2 text-red-500 text-sm">{formError}</p>}
       </Modal>
 

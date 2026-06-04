@@ -12,7 +12,7 @@ export default function ImageUpload({ value, onChange, preview, className = '' }
   const inputRef = useRef<HTMLInputElement>(null)
   const [localPreview, setLocalPreview] = useState<string | null>(null)
 
-  const currentPreview = localPreview || preview || (value && value.startsWith('/') ? value : null)
+  const currentPreview = localPreview || preview || value || null
 
   const handleFile = (file: File) => {
     const url = URL.createObjectURL(file)
@@ -37,8 +37,7 @@ export default function ImageUpload({ value, onChange, preview, className = '' }
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
-        capture="environment"
+        accept="image/*,video/*"
         className="hidden"
         onChange={handleChange}
       />
@@ -72,7 +71,7 @@ export default function ImageUpload({ value, onChange, preview, className = '' }
 export function SmallImageUpload({ value, onChange, preview }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [localPreview, setLocalPreview] = useState<string | null>(null)
-  const currentPreview = localPreview || preview || (value?.startsWith('/') ? value : null)
+  const currentPreview = localPreview || preview || value || null
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -84,7 +83,7 @@ export function SmallImageUpload({ value, onChange, preview }: ImageUploadProps)
 
   return (
     <div>
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleChange} />
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
       {currentPreview ? (
         <img
           src={currentPreview}

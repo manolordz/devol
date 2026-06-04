@@ -22,7 +22,7 @@ router.get('/pending', authenticate, requireProject, async (req, res) => {
     const pid = req.user.projectId;
     const [{ data: clients }, { data: items }, { data: payments }] = await Promise.all([
       db.from('clients').select('id,name').eq('project_id', pid),
-      db.from('inventory').select('client_id,precio_publicado').eq('project_id', pid).not('precio_publicado', 'is', null).neq('precio_publicado', ''),
+      db.from('inventory').select('client_id,precio_publicado').eq('project_id', pid).eq('inventory_status', 'Comprado').not('precio_publicado', 'is', null).neq('precio_publicado', ''),
       db.from('payments').select('paid_by,amount_mxn').eq('project_id', pid).eq('received', 1),
     ]);
     const rows = (clients || []).map(c => {

@@ -32,7 +32,7 @@ export default function GastosPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [showFilters, setShowFilters] = useState(false)
-  const [form, setForm] = useState({ description: '', amount: '', currency: 'MXN' as Currency, category: 'Mercancía' as ExpenseCategory, paid_by: '' })
+  const [form, setForm] = useState({ description: '', amount: '', currency: 'MXN' as Currency, category: 'Mercancía' as ExpenseCategory, paid_by: '', tarjeta: '' })
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState('')
 
@@ -82,7 +82,7 @@ export default function GastosPage() {
         setExpenses(prev => [data, ...prev])
       }
       setAddOpen(false); setEditItem(null)
-      setForm({ description: '', amount: '', currency: 'MXN', category: 'Mercancía', paid_by: '' })
+      setForm({ description: '', amount: '', currency: 'MXN', category: 'Mercancía', paid_by: '', tarjeta: '' })
     } catch (err: any) {
       setFormError(err.response?.data?.error || 'Error')
     } finally { setFormLoading(false) }
@@ -91,7 +91,7 @@ export default function GastosPage() {
   const openEdit = (item: Expense) => {
     requirePin(async () => {
       setEditItem(item)
-      setForm({ description: item.description, amount: String(item.amount), currency: item.currency, category: item.category, paid_by: String(item.paid_by) })
+      setForm({ description: item.description, amount: String(item.amount), currency: item.currency, category: item.category, paid_by: String(item.paid_by), tarjeta: item.tarjeta || '' })
       setAddOpen(true)
     })
   }
@@ -130,7 +130,7 @@ export default function GastosPage() {
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showFilters ? 'bg-gold text-navy' : 'bg-gray-100 text-gray-600'}`}>
             <Filter size={15} />
           </button>
-          <button onClick={() => { setEditItem(null); setForm({ description: '', amount: '', currency: 'MXN', category: 'Mercancía', paid_by: '' }); setAddOpen(true) }}
+          <button onClick={() => { setEditItem(null); setForm({ description: '', amount: '', currency: 'MXN', category: 'Mercancía', paid_by: '', tarjeta: '' }); setAddOpen(true) }}
             className="flex items-center gap-1.5 bg-gold text-navy px-3 py-2 rounded-lg text-sm font-bold hover:bg-gold-dark transition-colors">
             <Plus size={16} /><span className="hidden sm:inline">Agregar</span>
           </button>
@@ -167,6 +167,7 @@ export default function GastosPage() {
                   { key: 'amount_mxn', label: 'Gasto MXN' },
                   { key: 'category', label: 'Categoría' },
                   { key: 'paid_by_name', label: 'Pagado por' },
+                  { key: 'tarjeta', label: 'Tarjeta' },
                   { key: 'created_at', label: 'Fecha' },
                   { key: 'actions', label: '' },
                 ].map(col => (
@@ -179,7 +180,7 @@ export default function GastosPage() {
               </tr>
               {showFilters && (
                 <tr className="bg-white border-b border-gray-100">
-                  {['description','amount','currency','amount_mxn','category','paid_by_name','created_at',''].map((key, i) => (
+                  {['description','amount','currency','amount_mxn','category','paid_by_name','tarjeta','created_at',''].map((key, i) => (
                     <td key={i} className="px-2 py-1">
                       {key && (
                         <input className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gold"
@@ -193,7 +194,7 @@ export default function GastosPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-gray-400">No hay gastos</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-gray-400">No hay gastos</td></tr>
               ) : filtered.map(item => (
                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                   <td className="td font-medium">{item.description}</td>
@@ -202,6 +203,7 @@ export default function GastosPage() {
                   <td className="td font-semibold text-navy">{fmtMXN(item.amount_mxn)}</td>
                   <td className="td"><span className={`badge ${catColors[item.category] || 'bg-gray-100 text-gray-600'}`}>{item.category}</span></td>
                   <td className="td">{item.paid_by_name}</td>
+                  <td className="td text-gray-500 text-xs">{item.tarjeta || '—'}</td>
                   <td className="td text-gray-400 text-xs">{new Date(item.created_at).toLocaleDateString('es-MX')}</td>
                   <td className="td">
                     <div className="flex gap-1">
@@ -247,6 +249,9 @@ export default function GastosPage() {
             </select>
           </FormField>
         </div>
+        <FormField label="Tarjeta (opcional)">
+          <input className="input" value={form.tarjeta} onChange={e => setForm(f => ({ ...f, tarjeta: e.target.value }))} placeholder="Ej: BBVA, Amex..." />
+        </FormField>
         {formError && <p className="mt-2 text-red-500 text-sm">{formError}</p>}
       </Modal>
 

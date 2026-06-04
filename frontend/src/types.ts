@@ -59,6 +59,9 @@ export interface InventoryItem {
   paqueteria: boolean
   precio_publicado?: string
   shipment_id?: number
+  nota?: string
+  lat?: number
+  lng?: number
   costo_mxn: number
   costo_sugerido: number
   created_at?: string
@@ -76,6 +79,7 @@ export interface Expense {
   category: ExpenseCategory
   paid_by: number
   paid_by_name?: string
+  tarjeta?: string
   created_at: string
 }
 

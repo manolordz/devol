@@ -13,14 +13,14 @@ router.get('/', authenticate, requireProject, async (req, res) => {
 
 router.post('/', authenticate, requireProject, async (req, res) => {
   try {
-    const { description, amount, currency, category, paid_by } = req.body;
+    const { description, amount, currency, category, paid_by, tarjeta } = req.body;
     if (!description || !amount || !category || !paid_by)
       return res.status(400).json({ error: 'Descripción, gasto, categoría y pagado por son requeridos' });
     const rates = await getRates();
     const amountMXN = Math.round(toMXN(parseFloat(amount), currency || 'MXN', rates) * 100) / 100;
     const { data: expense } = await getDb().from('expenses').insert({
       project_id: req.user.projectId, description, amount: parseFloat(amount),
-      currency: currency || 'MXN', amount_mxn: amountMXN, category, paid_by: parseInt(paid_by),
+      currency: currency || 'MXN', amount_mxn: amountMXN, category, paid_by: parseInt(paid_by), tarjeta: tarjeta || null,
     }).select('*, users(name)').single();
     await logActivity({ projectId: req.user.projectId, userId: req.user.userId, userName: req.user.userName,
       actionType: 'create', tableName: 'expenses', recordId: expense.id, fieldName: 'description', newValue: description });
@@ -34,7 +34,7 @@ router.put('/:id', authenticate, requireProject, async (req, res) => {
     const { id } = req.params;
     const { data: existing } = await db.from('expenses').select('*').eq('id', id).eq('project_id', req.user.projectId).maybeSingle();
     if (!existing) return res.status(404).json({ error: 'Gasto no encontrado' });
-    const { description, amount, currency, category, paid_by } = req.body;
+    const { description, amount, currency, category, paid_by, tarjeta } = req.body;
     const rates = await getRates();
     const cur = currency || existing.currency;
     const amt = amount !== undefined ? parseFloat(amount) : Number(existing.amount);
@@ -45,6 +45,7 @@ router.put('/:id', authenticate, requireProject, async (req, res) => {
     if (currency !== undefined) updates.currency = currency;
     if (category !== undefined) updates.category = category;
     if (paid_by !== undefined) updates.paid_by = parseInt(paid_by);
+    if (tarjeta !== undefined) updates.tarjeta = tarjeta;
     updates.amount_mxn = amountMXN;
     for (const [field, newVal] of Object.entries(updates)) {
       if (field !== 'amount_mxn') await logActivity({ projectId: req.user.projectId, userId: req.user.userId, userName: req.user.userName,
