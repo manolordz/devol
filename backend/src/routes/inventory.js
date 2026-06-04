@@ -107,7 +107,7 @@ router.put('/:id', authenticate, requireProject, upload.single('photo'), async (
     if (!existing) return res.status(404).json({ error: 'Artículo no encontrado' });
 
     const fields = ['brand','model','price','currency','store_id','inventory_status','status',
-                    'client_id','delivered','paqueteria','precio_publicado','shipment_id','nota'];
+                    'client_id','delivered','paqueteria','precio_publicado','shipment_id','nota','lat','lng'];
     const updates = {};
     fields.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
     if (req.file) {
@@ -120,6 +120,8 @@ router.put('/:id', authenticate, requireProject, upload.single('photo'), async (
     if (updates.price !== undefined) updates.price = parseFloat(updates.price);
     if (updates.store_id !== undefined) updates.store_id = updates.store_id ? parseInt(updates.store_id) : null;
     if (updates.client_id !== undefined) updates.client_id = updates.client_id ? parseInt(updates.client_id) : null;
+    if (updates.lat !== undefined) updates.lat = updates.lat ? parseFloat(updates.lat) : null;
+    if (updates.lng !== undefined) updates.lng = updates.lng ? parseFloat(updates.lng) : null;
 
     for (const [field, newVal] of Object.entries(updates)) {
       await logActivity({ projectId: req.user.projectId, userId: req.user.userId, userName: req.user.userName,
