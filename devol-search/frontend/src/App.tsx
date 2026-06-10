@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import AdminPage from "./pages/AdminPage";
 import FavoritesPage from "./pages/FavoritesPage";
+import SavedSearchesPage from "./pages/SavedSearchesPage";
 import SearchPage from "./pages/SearchPage";
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<SearchPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/saved" element={<SavedSearchesPage />} />
             <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </main>

@@ -1,8 +1,14 @@
+import os
+
 from sqlmodel import Session, SQLModel, create_engine
 
-DATABASE_URL = "sqlite:///./devol.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./devol.db")
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# SQLite needs this flag for use across threads/requests; Postgres (Supabase)
+# does not accept it.
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 
 def init_db():

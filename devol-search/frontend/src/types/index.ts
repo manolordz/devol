@@ -50,3 +50,24 @@ export interface SearchField {
   options?: string[];
   enabled: boolean;
 }
+
+export interface SavedSearchSummary {
+  id: number;
+  name?: string;
+  query_string: string;
+  fields: Record<string, string | number>;
+  store_ids: string[];
+  exact_count: number;
+  similar_count: number;
+  created_at: string;
+}
+
+export interface SavedSearchDetail {
+  id: number;
+  name?: string;
+  query_string: string;
+  fields: Record<string, string | number>;
+  store_ids: string[];
+  results: { exact: ProductResult[]; similar: ProductResult[] };
+  created_at: string;
+}

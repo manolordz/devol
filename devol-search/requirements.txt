@@ -1,0 +1,11 @@
+# Requirements for the Vercel Python serverless function (api/index.py).
+# Playwright/Chromium is intentionally excluded here: it doesn't fit within
+# Vercel's serverless size limits. The ALLU (playwright-based) scraper will
+# report an error for that store in production but the rest of the app
+# (OKURA/Shopify search, favorites, saved searches) works normally.
+fastapi>=0.111.0
+sqlmodel>=0.0.18
+httpx>=0.27.0
+beautifulsoup4>=4.12.3
+python-multipart>=0.0.9
+psycopg2-binary>=2.9.9

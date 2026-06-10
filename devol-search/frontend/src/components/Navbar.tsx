@@ -11,6 +11,7 @@ export default function Navbar() {
           {[
             { to: "/", label: "Buscar" },
             { to: "/favorites", label: "Favoritos" },
+            { to: "/saved", label: "Guardados" },
             { to: "/admin", label: "Admin" },
           ].map(({ to, label }) => (
             <NavLink

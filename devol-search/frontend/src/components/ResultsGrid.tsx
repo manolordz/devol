@@ -1,11 +1,20 @@
 import type { ProductResult, SearchResponse } from "../types";
+import { productKey } from "../utils";
 import ResultCard from "./ResultCard";
 
 interface Props {
   results: SearchResponse | null;
+  selectable?: boolean;
+  selectedKeys?: Set<string>;
+  onToggleSelect?: (key: string) => void;
 }
 
-export default function ResultsGrid({ results }: Props) {
+export default function ResultsGrid({
+  results,
+  selectable,
+  selectedKeys,
+  onToggleSelect,
+}: Props) {
   if (!results) return null;
 
   const { exact, similar, query_string, errors } = results;
@@ -44,7 +53,13 @@ export default function ResultsGrid({ results }: Props) {
             <h2 className="section-title">Resultados exactos</h2>
             <span className="text-xs text-gray-400">{exact.length} encontrado{exact.length !== 1 ? "s" : ""}</span>
           </div>
-          <ProductGrid products={exact} query={query_string} />
+          <ProductGrid
+            products={exact}
+            query={query_string}
+            selectable={selectable}
+            selectedKeys={selectedKeys}
+            onToggleSelect={onToggleSelect}
+          />
         </section>
       )}
 
@@ -58,7 +73,13 @@ export default function ResultsGrid({ results }: Props) {
             </h2>
             <span className="text-xs text-gray-400">{similar.length} encontrado{similar.length !== 1 ? "s" : ""}</span>
           </div>
-          <ProductGrid products={similar} query={query_string} />
+          <ProductGrid
+            products={similar}
+            query={query_string}
+            selectable={selectable}
+            selectedKeys={selectedKeys}
+            onToggleSelect={onToggleSelect}
+          />
         </section>
       )}
     </div>
@@ -68,15 +89,31 @@ export default function ResultsGrid({ results }: Props) {
 function ProductGrid({
   products,
   query,
+  selectable,
+  selectedKeys,
+  onToggleSelect,
 }: {
   products: ProductResult[];
   query: string;
+  selectable?: boolean;
+  selectedKeys?: Set<string>;
+  onToggleSelect?: (key: string) => void;
 }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {products.map((product, i) => (
-        <ResultCard key={`${product.store_id}-${product.url}-${i}`} product={product} searchQuery={query} />
-      ))}
+      {products.map((product, i) => {
+        const key = productKey(product);
+        return (
+          <ResultCard
+            key={`${key}-${i}`}
+            product={product}
+            searchQuery={query}
+            selectable={selectable}
+            selected={selectedKeys?.has(key)}
+            onToggleSelect={() => onToggleSelect?.(key)}
+          />
+        );
+      })}
     </div>
   );
 }

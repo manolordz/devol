@@ -6,4 +6,6 @@ node_modules/
 *.db-wal
 uploads/
 frontend/dist/
+devol-search/frontend/dist/
+.vercel
 .DS_Store

@@ -1,12 +1,18 @@
 import type {
   Favorite,
   ProductResult,
+  SavedSearchDetail,
+  SavedSearchSummary,
   SearchField,
   SearchResponse,
   Store,
 } from "../types";
 
-const BASE_URL = "http://localhost:8000";
+// In production (Vercel) the frontend and API are served from the same
+// origin and `/api/*` is rewritten to the Python serverless function, so
+// VITE_API_BASE_URL is set to "" (relative URLs). For local dev it falls
+// back to the FastAPI dev server on port 8000.
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 async function request<T>(
   path: string,
@@ -124,4 +130,30 @@ export function deleteField(id: string): Promise<void> {
 // Config
 export function getConfig(): Promise<{ jpy_to_mxn: number }> {
   return request("/api/config");
+}
+
+// Saved searches
+export function getSavedSearches(): Promise<SavedSearchSummary[]> {
+  return request("/api/saved-searches");
+}
+
+export function getSavedSearch(id: number): Promise<SavedSearchDetail> {
+  return request(`/api/saved-searches/${id}`);
+}
+
+export function createSavedSearch(data: {
+  name?: string;
+  query_string: string;
+  fields: Record<string, string | number>;
+  store_ids: string[];
+  results: { exact: ProductResult[]; similar: ProductResult[] };
+}): Promise<SavedSearchDetail> {
+  return request("/api/saved-searches", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteSavedSearch(id: number): Promise<void> {
+  return request(`/api/saved-searches/${id}`, { method: "DELETE" });
 }

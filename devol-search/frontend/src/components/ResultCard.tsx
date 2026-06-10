@@ -16,9 +16,18 @@ function getStoreColor(storeId: string): string {
 interface Props {
   product: ProductResult;
   searchQuery?: string;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }
 
-export default function ResultCard({ product, searchQuery }: Props) {
+export default function ResultCard({
+  product,
+  searchQuery,
+  selectable,
+  selected,
+  onToggleSelect,
+}: Props) {
   const [showModal, setShowModal] = useState(false);
   const [notes, setNotes] = useState("");
   const [clients, setClients] = useState("");
@@ -76,8 +85,22 @@ export default function ResultCard({ product, searchQuery }: Props) {
               </span>
             </div>
           )}
+          {/* Selection checkbox */}
+          {selectable && (
+            <label
+              className="absolute top-2 left-2 w-7 h-7 flex items-center justify-center bg-white/90 hover:bg-white shadow-sm cursor-pointer"
+              title="Seleccionar para PDF"
+            >
+              <input
+                type="checkbox"
+                checked={!!selected}
+                onChange={() => onToggleSelect?.()}
+                className="w-4 h-4 accent-terracota cursor-pointer"
+              />
+            </label>
+          )}
           {/* Similarity badge */}
-          <div className="absolute top-2 left-2">
+          <div className="absolute bottom-2 left-2">
             {product.similarity_score >= 0.8 ? (
               <span className="badge-exact">Exacto</span>
             ) : (

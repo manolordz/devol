@@ -1,6 +1,9 @@
 from typing import Optional
 
-from playwright.async_api import async_playwright
+try:
+    from playwright.async_api import async_playwright
+except ImportError:  # pragma: no cover - playwright not installed in this env
+    async_playwright = None
 
 from .base import BaseScraper, ProductResult
 
@@ -20,6 +23,11 @@ PRICE_SELECTORS = [".price", ".product-price", ".item-price", "[class*='price']"
 
 class PlaywrightScraper(BaseScraper):
     async def search(self, query: str, filters: dict) -> list[ProductResult]:
+        if async_playwright is None:
+            raise RuntimeError(
+                "Playwright no está disponible en este entorno de despliegue."
+            )
+
         results: list[ProductResult] = []
         browser = None
         try:
