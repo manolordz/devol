@@ -1,12 +1,14 @@
 import json
-from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlmodel import Session, select
+
+from database import get_session
+from models.db import SearchFieldConfig
 
 router = APIRouter()
-CONFIG_PATH = Path(__file__).parent.parent / "config" / "search_fields.json"
 
 
 class FieldCreate(BaseModel):
@@ -26,47 +28,49 @@ class FieldUpdate(BaseModel):
     enabled: Optional[bool] = None
 
 
-def _load() -> list[dict]:
-    with open(CONFIG_PATH) as f:
-        return json.load(f)
-
-
-def _save(data: list[dict]):
-    with open(CONFIG_PATH, "w") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-
 @router.get("/fields")
-def get_fields():
-    return _load()
+def get_fields(session: Session = Depends(get_session)):
+    fields = session.exec(select(SearchFieldConfig)).all()
+    return [f.to_dict() for f in fields]
 
 
 @router.post("/fields", status_code=201)
-def create_field(field: FieldCreate):
-    fields = _load()
-    if any(f["id"] == field.id for f in fields):
+def create_field(field: FieldCreate, session: Session = Depends(get_session)):
+    if session.get(SearchFieldConfig, field.id):
         raise HTTPException(status_code=409, detail=f"Field with id '{field.id}' already exists")
-    fields.append(field.model_dump())
-    _save(fields)
-    return field.model_dump()
+    data = field.model_dump()
+    options = data.pop("options", None)
+    db_field = SearchFieldConfig(
+        options_json=json.dumps(options) if options is not None else None,
+        **data,
+    )
+    session.add(db_field)
+    session.commit()
+    session.refresh(db_field)
+    return db_field.to_dict()
 
 
 @router.patch("/fields/{field_id}")
-def update_field(field_id: str, update: FieldUpdate):
-    fields = _load()
-    for i, f in enumerate(fields):
-        if f["id"] == field_id:
-            patch = {k: v for k, v in update.model_dump().items() if v is not None}
-            fields[i].update(patch)
-            _save(fields)
-            return fields[i]
-    raise HTTPException(status_code=404, detail="Field not found")
+def update_field(field_id: str, update: FieldUpdate, session: Session = Depends(get_session)):
+    db_field = session.get(SearchFieldConfig, field_id)
+    if not db_field:
+        raise HTTPException(status_code=404, detail="Field not found")
+    patch = {k: v for k, v in update.model_dump().items() if v is not None}
+    if "options" in patch:
+        options = patch.pop("options")
+        db_field.options_json = json.dumps(options) if options is not None else None
+    for key, value in patch.items():
+        setattr(db_field, key, value)
+    session.add(db_field)
+    session.commit()
+    session.refresh(db_field)
+    return db_field.to_dict()
 
 
 @router.delete("/fields/{field_id}", status_code=204)
-def delete_field(field_id: str):
-    fields = _load()
-    filtered = [f for f in fields if f["id"] != field_id]
-    if len(filtered) == len(fields):
+def delete_field(field_id: str, session: Session = Depends(get_session)):
+    db_field = session.get(SearchFieldConfig, field_id)
+    if not db_field:
         raise HTTPException(status_code=404, detail="Field not found")
-    _save(filtered)
+    session.delete(db_field)
+    session.commit()

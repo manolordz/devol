@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
 from routers import search, stores, favorites, fields, saved_searches
+from seed import seed_defaults
 
 JPY_TO_MXN = 0.115
 
@@ -13,6 +14,7 @@ JPY_TO_MXN = 0.115
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    seed_defaults()
     yield
 
 

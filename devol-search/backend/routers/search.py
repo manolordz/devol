@@ -1,18 +1,17 @@
 import asyncio
-import json
-from pathlib import Path
 from typing import Any, Optional, Tuple
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+from sqlmodel import Session, select
 
+from database import engine
+from models.db import StoreConfig
 from scrapers.shopify import ShopifyScraper
 from scrapers.playwright_base import PlaywrightScraper
 from scrapers.allu import AlluScraper
 
 router = APIRouter()
-
-CONFIG_DIR = Path(__file__).parent.parent / "config"
 
 
 class SearchRequest(BaseModel):
@@ -21,8 +20,9 @@ class SearchRequest(BaseModel):
 
 
 def _load_stores() -> list[dict]:
-    with open(CONFIG_DIR / "stores.json") as f:
-        return json.load(f)
+    with Session(engine) as session:
+        stores = session.exec(select(StoreConfig)).all()
+        return [s.to_dict() for s in stores]
 
 
 def _get_scraper(store: dict):

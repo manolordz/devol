@@ -52,36 +52,55 @@ function StoresTab() {
   const [stores, setStores] = useState<Store[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [editStore, setEditStore] = useState<Store | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getStores().then(setStores);
   }, []);
 
   async function handleToggle(store: Store) {
-    const updated = await updateStore(store.id, { enabled: !store.enabled });
-    setStores((prev) => prev.map((s) => (s.id === store.id ? updated : s)));
+    try {
+      const updated = await updateStore(store.id, { enabled: !store.enabled });
+      setStores((prev) => prev.map((s) => (s.id === store.id ? updated : s)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo actualizar la tienda");
+    }
   }
 
   async function handleDelete(id: string) {
     if (!confirm("¿Eliminar esta tienda?")) return;
-    await deleteStore(id);
-    setStores((prev) => prev.filter((s) => s.id !== id));
+    try {
+      await deleteStore(id);
+      setStores((prev) => prev.filter((s) => s.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo eliminar la tienda");
+    }
   }
 
   async function handleSave(data: Store) {
-    if (editStore) {
-      const updated = await updateStore(data.id, data);
-      setStores((prev) => prev.map((s) => (s.id === data.id ? updated : s)));
-      setEditStore(null);
-    } else {
-      const created = await createStore(data);
-      setStores((prev) => [...prev, created]);
-      setShowAdd(false);
+    try {
+      setError(null);
+      if (editStore) {
+        const updated = await updateStore(data.id, data);
+        setStores((prev) => prev.map((s) => (s.id === data.id ? updated : s)));
+        setEditStore(null);
+      } else {
+        const created = await createStore(data);
+        setStores((prev) => [...prev, created]);
+        setShowAdd(false);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar la tienda");
     }
   }
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2">
+          {error}
+        </div>
+      )}
       <div className="flex justify-end">
         <button onClick={() => setShowAdd(true)} className="btn-primary">
           + Agregar tienda
@@ -205,6 +224,7 @@ function StoreModal({
         <Field label="Tipo">
           <select className="input-field" value={form.type} onChange={(e) => set("type", e.target.value)}>
             <option value="shopify">shopify</option>
+            <option value="allu">allu</option>
             <option value="playwright">playwright</option>
             <option value="static">static</option>
           </select>
@@ -229,30 +249,49 @@ function StoreModal({
 function FieldsTab() {
   const [fields, setFields] = useState<SearchField[]>([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getFields().then(setFields);
   }, []);
 
   async function handleToggle(field: SearchField) {
-    const updated = await updateField(field.id, { enabled: !field.enabled });
-    setFields((prev) => prev.map((f) => (f.id === field.id ? updated : f)));
+    try {
+      const updated = await updateField(field.id, { enabled: !field.enabled });
+      setFields((prev) => prev.map((f) => (f.id === field.id ? updated : f)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo actualizar el campo");
+    }
   }
 
   async function handleDelete(id: string) {
     if (!confirm("¿Eliminar este campo?")) return;
-    await deleteField(id);
-    setFields((prev) => prev.filter((f) => f.id !== id));
+    try {
+      await deleteField(id);
+      setFields((prev) => prev.filter((f) => f.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo eliminar el campo");
+    }
   }
 
   async function handleAdd(data: SearchField) {
-    const created = await createField(data);
-    setFields((prev) => [...prev, created]);
-    setShowAdd(false);
+    try {
+      setError(null);
+      const created = await createField(data);
+      setFields((prev) => [...prev, created]);
+      setShowAdd(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar el campo");
+    }
   }
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2">
+          {error}
+        </div>
+      )}
       <div className="flex justify-end">
         <button onClick={() => setShowAdd(true)} className="btn-primary">
           + Agregar campo
