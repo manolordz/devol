@@ -11,8 +11,8 @@
     "id": "allu",
     "name": "ALLU",
     "url": "https://allu-official.com/jp/ja",
-    "type": "playwright",
-    "search_url_template": "https://allu-official.com/jp/ja/search?q={query}",
+    "type": "allu",
+    "search_url_template": "https://allu-official.com/jp/ja/market/items?keyword={query}",
     "enabled": true
   }
 ]

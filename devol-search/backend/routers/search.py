@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from scrapers.shopify import ShopifyScraper
 from scrapers.playwright_base import PlaywrightScraper
+from scrapers.allu import AlluScraper
 
 router = APIRouter()
 
@@ -28,6 +29,8 @@ def _get_scraper(store: dict):
     scraper_type = store.get("type", "shopify")
     if scraper_type == "shopify":
         return ShopifyScraper(store)
+    elif scraper_type == "allu":
+        return AlluScraper(store)
     elif scraper_type in ("playwright", "static"):
         return PlaywrightScraper(store)
     return ShopifyScraper(store)
