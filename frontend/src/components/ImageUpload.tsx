@@ -37,7 +37,7 @@ export default function ImageUpload({ value, onChange, preview, className = '' }
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,video/*"
+        accept="image/*"
         className="hidden"
         onChange={handleChange}
       />
